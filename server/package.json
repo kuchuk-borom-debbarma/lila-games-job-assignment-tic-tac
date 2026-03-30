@@ -1,0 +1,17 @@
+{
+  "name": "server",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "bun build ./src/index.ts --outfile ./dist/index.js --target=browser",
+    "up": "docker compose up -d",
+    "down": "docker compose down",
+    "logs": "docker compose logs -f nakama"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "nakama-runtime": "https://github.com/heroiclabs/nakama-common",
+    "typescript": "^5.0.0"
+  }
+}
