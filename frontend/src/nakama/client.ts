@@ -18,7 +18,7 @@ class NakamaManager {
         // We use email auth internally with a dummy domain to support passwords without requiring actual emails
         const email = `${username}@lila.games`;
         this.session = await this.client.authenticateEmail(email, password, true, username);
-        localStorage.setItem("nakama_session", this.session.token);
+        sessionStorage.setItem("nakama_session", this.session.token);
         console.log("Authenticated as", username);
         return this.session;
     }

@@ -18,8 +18,8 @@ enum OpCode {
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(GameState.AUTH);
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(`player_${Math.floor(Math.random() * 1000)}`);
+  const [password, setPassword] = useState('password123');
   const [match, setMatch] = useState<Match | null>(null);
   const [board, setBoard] = useState<number[]>(new Array(9).fill(0));
   const [nextPlayerId, setNextPlayerId] = useState('');
