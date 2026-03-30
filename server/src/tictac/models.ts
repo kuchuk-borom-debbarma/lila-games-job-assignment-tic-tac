@@ -17,6 +17,7 @@ export interface MatchState {
     // Game status
     winnerId: string | null;
     isDraw: boolean;
+    gameOverTick: number; // Track when the game ended
 
     // Optional: Deadline to handle players who disconnect or go AFK
     deadlineCount: number;

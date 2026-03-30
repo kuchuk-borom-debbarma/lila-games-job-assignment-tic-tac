@@ -7,6 +7,7 @@ export const matchInit: nkruntime.MatchInitFunction<MatchState> = (ctx, logger, 
         nextPlayerId: '',
         winnerId: null,
         isDraw: false,
+        gameOverTick: 0,
         deadlineCount: 0,
     };
 
@@ -60,8 +61,15 @@ export const matchLeave: nkruntime.MatchLeaveFunction<MatchState> = (ctx, logger
 };
 
 export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = (ctx, logger, nk, dispatcher, tick, state, messages) => {
+    // Shutdown after 2 ticks of the game being over (approx 2 seconds)
+    if (state.gameOverTick > 0 && tick > state.gameOverTick + 2) {
+        logger.info('Match %s is over, shutting down handler.', ctx.matchId);
+        return null;
+    }
+
+    // If game is over, we stop processing new moves but let the loop run for the shutdown delay
     if (state.winnerId || state.isDraw) {
-        return {state};
+        return { state };
     }
 
     messages.forEach((msg) => {
@@ -86,9 +94,25 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = (ctx, logger, 
 
             if (checkWin(state.board, player.symbol)) {
                 state.winnerId = userId;
+                state.gameOverTick = tick;
+
+                // Record the win to the leaderboard (INCREMENTAL operator adds +1)
+                try {
+                    const score = 1;
+                    const subscore = 0;
+                    const metadata = { matchId: ctx.matchId };
+                    // We use as any here to satisfy TS if the runtime definitions are contradictory,
+                    // but most Nakama versions expect a JS object for metadata in the JS runtime.
+                    nk.leaderboardRecordWrite('tictactoe_wins', userId, player.presence.username, score, subscore, metadata as any);
+                    logger.info('Leaderboard: Win recorded for user %s (%s)', userId, player.presence.username);
+                } catch (err) {
+                    logger.error('Leaderboard: Failed to record win: %s', err);
+                }
+
                 dispatcher.broadcastMessage(OpCode.GAME_OVER, JSON.stringify({winnerId: userId, board: state.board}));
             } else if (state.board.every(cell => cell !== 0)) {
                 state.isDraw = true;
+                state.gameOverTick = tick;
                 dispatcher.broadcastMessage(OpCode.GAME_OVER, JSON.stringify({isDraw: true, board: state.board}));
             } else {
                 const otherPlayerId = Object.keys(state.presences).find(id => id !== userId);

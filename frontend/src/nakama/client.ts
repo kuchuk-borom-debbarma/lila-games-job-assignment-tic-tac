@@ -38,6 +38,13 @@ class NakamaManager {
         const maxPlayers = 2;
         await this.socket.addMatchmaker(query, minPlayers, maxPlayers);
     }
+
+    async getLeaderboard() {
+        if (!this.session) throw new Error("No session");
+        const id = 'tictactoe_wins';
+        const result = await this.client.listLeaderboardRecords(this.session, id);
+        return result.records || [];
+    }
 }
 
 export const nakamaManager = new NakamaManager();

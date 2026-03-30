@@ -28,6 +28,23 @@ const App: React.FC = () => {
   const [isDraw, setIsDraw] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [ticket, setTicket] = useState<string | null>(null);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (gameState === GameState.LOBBY) {
+      const fetchLeaderboard = async () => {
+        try {
+          const records = await nakamaManager.getLeaderboard();
+          setLeaderboard(records);
+        } catch (err) {
+          console.error("Failed to fetch leaderboard:", err);
+        }
+      };
+      fetchLeaderboard();
+      const interval = setInterval(fetchLeaderboard, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [gameState]);
 
   useEffect(() => {
     if (nakamaManager.socket) {
@@ -64,7 +81,7 @@ const App: React.FC = () => {
         console.log("Presence event:", event);
       };
     }
-  }, [nakamaManager.socket]);
+  }, [nakamaManager.socket, gameState]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,6 +130,7 @@ const App: React.FC = () => {
       <div className="container">
         <h1>Welcome, {username}!</h1>
         <p style={{fontSize: '0.8rem', color: '#888'}}>ID: {nakamaManager.session?.user_id}</p>
+        
         <div className="matchmaking">
           {isSearching ? (
             <div>
@@ -126,6 +144,33 @@ const App: React.FC = () => {
               <Play size={20} /> Play Game
             </button>
           )}
+        </div>
+
+        <div style={{ marginTop: '40px', width: '100%', maxWidth: '400px' }}>
+          <h3><Trophy size={20} /> Global Leaderboard</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #444' }}>
+                <th style={{ textAlign: 'left', padding: '8px' }}>Rank</th>
+                <th style={{ textAlign: 'left', padding: '8px' }}>Player</th>
+                <th style={{ textAlign: 'right', padding: '8px' }}>Wins</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaderboard.map((record, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid #333' }}>
+                  <td style={{ padding: '8px' }}>#{i + 1}</td>
+                  <td style={{ padding: '8px' }}>{record.username}</td>
+                  <td style={{ textAlign: 'right', padding: '8px' }}>{record.score}</td>
+                </tr>
+              ))}
+              {leaderboard.length === 0 && (
+                <tr>
+                  <td colSpan={3} style={{ padding: '20px', color: '#888' }}>No wins recorded yet!</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     );
