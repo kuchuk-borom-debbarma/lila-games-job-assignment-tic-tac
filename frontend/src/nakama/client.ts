@@ -41,9 +41,49 @@ class NakamaManager {
 
     async getLeaderboard() {
         if (!this.session) throw new Error("No session");
-        const id = 'tictactoe_wins';
-        const result = await this.client.listLeaderboardRecords(this.session, id);
-        return result.records || [];
+        
+        try {
+            const [winResult, lossResult, streakResult] = await Promise.all([
+                this.client.listLeaderboardRecords(this.session, 'tictactoe_wins', undefined, 10),
+                this.client.listLeaderboardRecords(this.session, 'tictactoe_losses', undefined, 100), // Get more to match against top winners
+                this.client.listLeaderboardRecords(this.session, 'tictactoe_streaks', undefined, 100)
+            ]);
+
+            // Merge results into a map by owner_id
+            const statsMap: { [userId: string]: any } = {};
+
+            winResult.records?.forEach(r => {
+                if (r.owner_id) {
+                    statsMap[r.owner_id] = { 
+                        username: r.username, 
+                        wins: r.score, 
+                        losses: 0, 
+                        bestStreak: 0 
+                    };
+                }
+            });
+
+            lossResult.records?.forEach(r => {
+                if (!r.owner_id) return;
+                if (statsMap[r.owner_id]) {
+                    statsMap[r.owner_id].losses = r.score;
+                } else if (Object.keys(statsMap).length < 10) {
+                    statsMap[r.owner_id] = { username: r.username, wins: 0, losses: r.score, bestStreak: 0 };
+                }
+            });
+
+            streakResult.records?.forEach(r => {
+                if (!r.owner_id) return;
+                if (statsMap[r.owner_id]) {
+                    statsMap[r.owner_id].bestStreak = r.score;
+                }
+            });
+
+            return Object.values(statsMap).sort((a, b) => b.wins - a.wins);
+        } catch (err) {
+            console.error("Leaderboard fetch error:", err);
+            return [];
+        }
     }
 }
 

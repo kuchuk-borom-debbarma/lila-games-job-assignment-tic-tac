@@ -153,7 +153,9 @@ const App: React.FC = () => {
               <tr style={{ borderBottom: '1px solid #444' }}>
                 <th style={{ textAlign: 'left', padding: '8px' }}>Rank</th>
                 <th style={{ textAlign: 'left', padding: '8px' }}>Player</th>
-                <th style={{ textAlign: 'right', padding: '8px' }}>Wins</th>
+                <th style={{ textAlign: 'center', padding: '8px' }}>W</th>
+                <th style={{ textAlign: 'center', padding: '8px' }}>L</th>
+                <th style={{ textAlign: 'right', padding: '8px' }}>Streak</th>
               </tr>
             </thead>
             <tbody>
@@ -161,12 +163,14 @@ const App: React.FC = () => {
                 <tr key={i} style={{ borderBottom: '1px solid #333' }}>
                   <td style={{ padding: '8px' }}>#{i + 1}</td>
                   <td style={{ padding: '8px' }}>{record.username}</td>
-                  <td style={{ textAlign: 'right', padding: '8px' }}>{record.score}</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{record.wins || 0}</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{record.losses || 0}</td>
+                  <td style={{ textAlign: 'right', padding: '8px' }}>{record.bestStreak || 0}🔥</td>
                 </tr>
               ))}
               {leaderboard.length === 0 && (
                 <tr>
-                  <td colSpan={3} style={{ padding: '20px', color: '#888' }}>No wins recorded yet!</td>
+                  <td colSpan={5} style={{ padding: '20px', color: '#888' }}>No records found!</td>
                 </tr>
               )}
             </tbody>
