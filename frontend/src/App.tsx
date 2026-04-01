@@ -29,6 +29,7 @@ const App: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [ticket, setTicket] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [selectedMode, setSelectedMode] = useState<'classic' | 'timed'>('classic');
 
   useEffect(() => {
     if (gameState === GameState.LOBBY) {
@@ -97,7 +98,7 @@ const App: React.FC = () => {
   const handlePlay = async () => {
     try {
       setIsSearching(true);
-      await nakamaManager.findMatch();
+      await nakamaManager.findMatch(selectedMode);
     } catch (err) {
       alert("Matchmaking failed: " + err);
       setIsSearching(false);
@@ -131,6 +132,36 @@ const App: React.FC = () => {
         <h1>Welcome, {username}!</h1>
         <p style={{fontSize: '0.8rem', color: '#888'}}>ID: {nakamaManager.session?.user_id}</p>
         
+        <div className="mode-selection" style={{ marginBottom: '20px' }}>
+          <button 
+            onClick={() => setSelectedMode('classic')}
+            style={{ 
+              marginRight: '10px', 
+              padding: '10px 20px',
+              background: selectedMode === 'classic' ? '#4a90e2' : '#333',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Classic Mode
+          </button>
+          <button 
+            onClick={() => setSelectedMode('timed')}
+            style={{ 
+              padding: '10px 20px',
+              background: selectedMode === 'timed' ? '#e94e77' : '#333',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Timed Mode (30s)
+          </button>
+        </div>
+
         <div className="matchmaking">
           {isSearching ? (
             <div>
@@ -182,7 +213,7 @@ const App: React.FC = () => {
 
   return (
     <div className="container">
-      <h2>Match: {match?.match_id.substring(0, 8)}...</h2>
+      <h2>Match: {match?.match_id.substring(0, 8)}... ({selectedMode.toUpperCase()})</h2>
       <div className="status">
         {winnerId ? (
           <div style={{ color: winnerId === nakamaManager.session?.user_id ? '#4caf50' : '#f44336' }}>

@@ -4,6 +4,9 @@ export interface Player {
 }
 
 export interface MatchState {
+    // Game mode: 'classic' or 'timed'
+    mode: 'classic' | 'timed';
+
     // The board: 0 = empty, 1 = X, 2 = O
     // Index 0-8 representing the 3x3 grid
     board: number[];

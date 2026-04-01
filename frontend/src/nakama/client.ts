@@ -30,13 +30,15 @@ class NakamaManager {
         return this.socket;
     }
 
-    async findMatch() {
+    async findMatch(mode: 'classic' | 'timed' = 'classic') {
         if (!this.socket) throw new Error("No socket");
-        // Built-in matchmaking
-        const query = "*";
+        // Filter players by the selected mode
+        const query = `+properties.mode:${mode}`;
         const minPlayers = 2;
         const maxPlayers = 2;
-        await this.socket.addMatchmaker(query, minPlayers, maxPlayers);
+        const stringProperties = { mode };
+        const numericProperties = {};
+        await this.socket.addMatchmaker(query, minPlayers, maxPlayers, stringProperties, numericProperties);
     }
 
     async getLeaderboard() {

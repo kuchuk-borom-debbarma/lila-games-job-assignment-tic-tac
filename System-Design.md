@@ -1,34 +1,54 @@
-# System Design
+# System Design: Lila Tic-Tac-Toe
 
-This is a quick breakdown of how the game is put together and why we made certain choices.
-
----
-
-## 1. No Global "Brain"
-Instead of having one giant manager trying to keep track of every single game running on the server, we kept things isolated. 
-
-*   **Each game is its own world:** Every match gets its own little container (QuickJS VM) in Nakama. We just pass the game state around between functions. 
-*   **Why?** It's way safer. You don't have to worry about Game A accidentally messing with Game B's board. Plus, with a game as simple as Tic-Tac-Toe, just passing a small object around is much easier than managing a complex central state.
+This document describes how the game is structured and how the different modes work.
 
 ---
 
-## 2. Keeping the Folders Clean
-We split the code into two main buckets: `nakama/` and `tictac/`.
+## 1. The Game Class
+The game rules are kept in a single class called `TicTacToeGame`. 
 
-*   **`nakama/` (The Server Stuff):** This is the glue. it handles things like people joining, leaving, and the technical WebSocket details.
-*   **`tictac/` (The Game Core):** This is just pure Tic-Tac-Toe logic—checking for wins, valid moves, etc. 
-*   **Why?** It keeps the "fun" part of the code separate from the "boring" server infrastructure. If we ever wanted to move this game to a different server engine later, we could just grab the `tictac/` folder and it would mostly just work.
-
----
-
-## 3. JSON over WebSockets
-We're keeping the communication simple by sending JSON payloads back and forth.
-
-*   **Why?** It's easy to read and debug. Since we're only updating a 3x3 grid, we don't need fancy binary compression yet. We use simple "OpCodes" (like MOVE or UPDATE) so the client and server always know exactly what message they're looking at.
+*   **Responsibility:** It handles player moves, updates the board, and checks if someone won or if there is a draw.
+*   **Actions:** When a move is made, the class sends a message to all players with the new board and records the result if the game ends.
 
 ---
 
-## 4. The 1-Second Heartbeat
-The server "wakes up" once every second to process moves.
+## 2. Game Modes
+The project uses two classes to handle different ways of playing:
 
-*   **Why?** Tic-Tac-Toe isn't a fast-paced shooter. A 1-second delay for the official "server says you moved" message is totally fine. This keeps the server's CPU usage super low, meaning we can run thousands of games at the same time without breaking a sweat.
+*   **Classic Mode:** Uses the `TicTacToeGame` class for standard play.
+*   **Timed Mode:** Uses the `TimedTicTacToeGame` class. This class adds a 30-second timer to the standard rules. If a player does not move in time, the other player wins.
+
+---
+
+## 3. Matchmaking
+Players are paired based on the mode they choose in the lobby.
+
+*   **Selection:** The player selects "Classic" or "Timed" before searching for a match.
+*   **Pairing:** The server only matches players who selected the same mode.
+*   **Initialization:** Once a pair is found, the server starts a match using the corresponding game class.
+
+---
+
+## 4. Communication (OpCodes)
+The frontend and the server talk to each other using specific codes:
+
+*   **MOVE (1):** Sent by the player to click a cell.
+*   **UPDATE (2):** Sent by the server to show the new board state.
+*   **GAME_OVER (3):** Sent by the server when the match is finished.
+*   **REJECTED (4):** Sent by the server if a move is not allowed.
+
+---
+
+## 5. Leaderboards and Stats
+The server saves game results directly to Nakama:
+
+*   **Wins and Losses:** Updated after every match and shown in the lobby leaderboard.
+*   **Win Streaks:** The server tracks how many games a player wins in a row and saves their highest streak.
+
+---
+
+## 6. Server Loop
+The server runs a loop once every second (1 tick per second). During this loop, it:
+1. Checks for any new player moves.
+2. Checks if a player has timed out (in Timed Mode).
+3. Sends out updates to the players.
